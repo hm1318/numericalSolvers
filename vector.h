@@ -5,37 +5,36 @@
 #include <iomanip>
 #include <cstdlib>
 #include <cmath>
+#include <algorithm>
 
 using namespace std;
-class Matrix;
+
+class Matrix; // forward declaration for matrix-vector multiplication
+
 class Vector {
 private:
-	int* vecValue; 
-	int vecElementCount; 
+	double* vecValue;
+	int vecElementCount;
 
 public:
-
 	// parameterized constructor
-	Vector(int size) {
-		vecElementCount = size;
-		cout << __FUNCSIG__ << endl;
-		vecValue = new int[vecElementCount]; // "new" because array would be destroyed at end of constructor
+	explicit Vector(int size) : vecElementCount(size) {
+		vecValue = new double[vecElementCount]; 
 	}
-
 	// destructor
 	~Vector()
 	{
-		delete[] vecValue; // remove from heap to prevent memory leak
+		delete[] vecValue;
 	}
 
 	// user defined copy constructor
-	Vector(const Vector& vec) : Vector(vec.vecElementCount) {
-		vecElementCount = vec.vecElementCount ;
-		vecValue = new int[vec.vecElementCount];
+	Vector(const Vector& vec) : vecElementCount(vec.vecElementCount) {
+		vecValue = new double[vecElementCount];
+		copy(vec.vecValue, vec.vecValue + vecElementCount, vecValue);
 	}
 
 	// user defined move constructor
-	Vector(Vector&& other)
+	Vector(Vector&& other) noexcept
 		:vecValue{ other.vecValue },
 		vecElementCount{ other.vecElementCount }
 	{
@@ -45,85 +44,111 @@ public:
 	// user defined move assignment
 	Vector& operator= (Vector&& other) noexcept
 	{
-		 if (&other == this)
-		 {
-			 return *this;
-		 }
-		delete vecValue;
+		if (&other == this)
+		{
+			return *this;
+		}
+		delete[] vecValue;
+		 
+		vecValue = other.vecValue;
+		vecElementCount = other.vecElementCount;
 
-		vecValue = new int[other.vecElementCount];
-		*vecValue = *other.vecValue;
+		other.vecValue= nullptr;
 
 		return *this;
 	}
 
 	// get the value at a certain index
-	int get(int index) const;
-	int operator[] (int index) const { // "const" enforces immutability to the compiler of the calling object
-		return get(index);
+	double operator[] (int index) const { // "const" enforces immutability to the compiler of the calling object
+		return *(vecValue + index);
 	}
 
-	void set(int index, int value); // set an index of the
-	void fill(int value);
-	void debug();
-	void rAssign(); // random assignment of values to the vector
-	int getSize();
+	void set(int index, double value); // change elements at a given position in the vector
+	void fill(double value); // populate the entire vector with value
+	void zeros();
+	int getSize() const; // returns number of elements in vector
 
-	Vector& operator=(const Vector& a) {
-		cout << "Copy assignment called" << endl;
-		if (this == &a) // if object is already the same as argument then nothing needs to be done
+	// Copy assignment operator
+	Vector& operator= (const Vector& a) {
+		if (this == &a) // parity check
 		{
 			return *this;
 		}
 
-		int* new_vecValue = new int[a.vecElementCount]; // allocate on to heap
-		memcpy(new_vecValue, a.vecValue, vecElementCount); // copy over data
-		delete[] vecValue; // deallocate 
-		vecValue = new_vecValue; // re-assign pointer
+		delete[] vecValue;
 
-		cout << "Copy assignment finished " << endl;
+		vecElementCount = a.vecElementCount;
+		vecValue = new double[vecElementCount]; // allocate on to heap
+
+		copy(a.vecValue, a.vecValue + vecElementCount, vecValue); // copy over data
+
+		
+
+		return *this;
 	}
-	friend Vector operator* (const Matrix&, const Vector&);
 
+	friend Vector operator* (const Matrix&, const Vector&); // matrix-vector multiplication
+	friend Vector operator* (const Vector&, const double multiplier); // scalar-vector multiplication
+	friend ostream& operator<< (ostream&, const Vector&); // stream-operator overload for vector display
+	friend Vector operator+ (const Vector&,const Vector&); // vector addition
+	friend Vector operator/ (const Vector&, const double divisor); // scalar-reciprocal vector multiplication
 };
 
-
-void Vector::debug() {
-
-	// sequentially display the elements of the vector from index 0
-
-	for (int i{ 0 }; i < vecElementCount; i++)
+Vector operator/ (const Vector& A, const double divisor) {
+	if (!(divisor == 0)){
+		return A * (1 / divisor);
+	} else
 	{
-		std::cout << *(vecValue + i) << std::endl;
+		throw domain_error("Division by zero not allowed.");
+	}
+}
+
+Vector operator* (const Vector& A, const double multiplier) {
+
+	Vector product(A.getSize());
+
+	for (int i{ 0 }; i < A.getSize(); i++) {
+		product.set(i, A[i] * multiplier);
 	}
 	
+	return product;
 }
 
-int Vector::getSize() {
+Vector operator+ (const Vector& A, const Vector& B) {
+
+	Vector sum(A.getSize());
+	for (int e{ 0 }; e < A.getSize(); e++) {
+		sum.set(e, A[e] + B[e]);
+	}
+	return sum;
+}
+
+ostream& operator<< (ostream& out, const Vector& A) {
+	for (int i{ 0 }; i < A.vecElementCount; i++) {
+		out << left << setw(4) << A[i] << endl;
+	}
+	out << endl;
+	return out;
+}
+
+int Vector::getSize() const {
 	return vecElementCount;
 }
-void Vector::rAssign() {
-	srand(time(0));
 
-	for (int j{ 0 }; j < vecElementCount; j++)
-	{
-		*(vecValue + j) = rand() % 1000;
-	}
+void Vector::zeros() {
+	fill(0);
 }
-void Vector::fill(int value)
+
+void Vector::fill(double value)
 {
-	for (int i{0}; i < vecElementCount; i++)
+	for (int i{ 0 }; i < vecElementCount; i++)
 	{
-		*(vecValue + i) = value ;
+		vecValue[i] = value;
 	}
 }
 
-int Vector::get(int index) const {
-	return *(vecValue + index);
-}
-
-void Vector::set(int index, int value) {
-	*(vecValue + index) = value;
+void Vector::set(int index, double value) {
+	vecValue[index] = value;
 }
 
 #endif
