@@ -17,3 +17,5 @@ All other lines hold 3 values, **f g h** where:
 The parameters.txt file MUST be laid out as above, otherwise the program will not function correctly.
 The code will terminate early if any of the following are negative: damping, stiffness, timestep, upper time bound or mass.
 If **a** is not recognised, the code will also terminate early.
+
+%TODO - can you include instructions for complimation?

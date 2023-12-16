@@ -154,10 +154,10 @@ Matrix operator+ (const Matrix& a, const Matrix& b) {
 	int c{ a.columns };
 
 	Matrix C(r, c);
-	if (a.rows == b.rows && a.columns == b.columns) {
+	if (a.rows == b.rows && a.columns == b.columns) {  //TODO ' exception handling for incompatible matrices'
 		for (int i{ 0 }; i < r; i++) {
 			for (int j{ 0 }; j < c; j++) {
-				*(C.matrixElement + i * c + j) = a(i, j) + b(i, j);
+				*(C.matrixElement + i * c + j) = a(i, j) + b(i, j);  //TODO: how are the elements stored in memory, depending on order is this the most efficient calling routine?
 			}
 		}
 	}
@@ -168,7 +168,7 @@ Matrix operator- (const Matrix& a, const Matrix& b) {
 	return a + (b * -1);
 }
 
-void Matrix::diagonal(double x, const int di, bool validity) // valid for square matrices (rows = columns)
+void Matrix::diagonal(double x, const int di, bool validity) // valid for square matrices (rows = columns)  //TODO: definition of what variables are mathematically
 {
 	if (validity) {
 		if (columns != rows) {
